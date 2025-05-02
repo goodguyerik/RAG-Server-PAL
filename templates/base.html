@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <title>Suchassistent</title>
+  <!-- Bootstrap CDN for simple styling -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <style>
+    .pdf-link {
+      color: #1a0dab;
+      text-decoration: underline;
+    }
+    /* Footer always visible */
+    .footer {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      background-color: #f8f9fa;
+      text-align: center;
+      padding: 10px;
+      border-top: 1px solid #e7e7e7;
+    }
+    /* Ensure the container doesn't get hidden behind the footer */
+    .content-container {
+      padding-bottom: 60px;
+    }
+    /* Logo styling in the navbar */
+    .navbar-brand img {
+      height: 30px;
+      margin-right: 10px;
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <a class="navbar-brand" href="{{ url_for('search') }}">
+      <img src="{{ url_for('static', filename=logo_path) }}" alt="{{ company_name }}">
+      Suchassistent - {{ company_name }}
+    </a>
+    {% if session.logged_in %}
+      <ul class="navbar-nav mr-auto">
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('search') }}">Suche</a>
+        </li>
+        {% if session.admin_logged_in %}
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('upload') }}">Dateien hochladen</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('pdf_delete') }}">PDFs löschen</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('synonyms_management') }}">Synonyme verwalten</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('download_all') }}">Logs &amp; Map Herunterladen</a>
+          </li>
+        {% else %}
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('admin_login') }}">Admin Login</a>
+          </li>
+        {% endif %}
+      </ul>
+    {% endif %}
+    <ul class="navbar-nav ml-auto">
+      {% if session.logged_in %}
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
+        </li>
+      {% else %}
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('login') }}">Login</a>
+        </li>
+      {% endif %}
+    </ul>
+  </nav>
+  <div class="container mt-4 content-container">
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        {% for message in messages %}
+          <div class="alert alert-info">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </div>
+  <footer class="footer">
+    <div>
+      <small><strong>Hinweis:</strong> Diese Suchmaschine verwendet KI-Algorithmen, um Ihnen relevante und präzise Suchergebnisse zu liefern. Die Suchmaschine kann Fehler machen.</small>
+    </div>
+    <div class="mt-2">
+    	<a href="https://tu-dresden.de/impressum" class="mr-3" target="_blank" rel="noopener noreferrer">Impressum</a>
+   	<a href="https://tu-dresden.de/impressum#ck_datenschutz" class="mr-3" target="_blank" rel="noopener noreferrer">Datenschutz</a>
+    	<a href="{{ url_for('accessibility') }}" class="mr-3">Barrierefreiheit</a>
+    </div>
+  </footer>
+</body>
+</html>

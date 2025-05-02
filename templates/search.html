@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-3">
+  <h3 class="text-center mb-3">Bitte geben Sie Ihre Suchanfrage ein.</h3>
+  <form method="POST" action="{{ url_for('search') }}">
+    <div class="form-group">
+      <textarea class="form-control" id="query" name="query" placeholder="Wie  kann ich die Gasart bei einem Warmlufterzeuger wechseln?" rows="2">{{ query or '' }}</textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">Suche</button>
+  </form>
+
+  {% if results is defined %}
+  <hr>
+  {% if results|length == 0 %}
+    <div class="alert alert-info">Keine Treffer gefunden!</div>
+  {% else %}
+  <form method="POST" action="{{ url_for('feedback') }}">
+    <input type="hidden" name="log_id" value="{{ log_id }}">
+    <input type="hidden" name="topk" value="{{ results|length }}">
+
+    <!-- Header Row -->
+    <div class="d-flex align-items-center font-weight-bold pb-2 mb-2 border-bottom" style="color: #555; font-size: 0.9em;">
+      <div style="width: 40px; text-align: center;">#</div>
+      <div style="flex: 1; padding-left: 15px;">Datei</div>
+      <div style="width: 70px;">Seite</div>
+      <div style="width: 60px; text-align: center;">Relevanz</div>
+      <div style="width: 140px; text-align: right;">Feedback</div>
+    </div>
+
+    <!-- Results Rows -->
+    {% for idx, result in results %}
+    {# result = (doc_id, display_name, page, score, color, file_type) #}
+    <div class="d-flex align-items-center py-2 border-bottom" style="font-size: 0.9em;">
+      <!-- Rank -->
+      <div style="width: 40px; text-align: center;">
+        <span>{{ keycaps[idx] }}</span>
+      </div>
+      <!-- File Link -->
+      <div style="flex: 1; padding-left: 15px;">
+        {% if result[5] == 'video' %}
+          <a href="{{ url_for('serve_video', filename=result[1]) }}#t={{ result[2] }}" target="_blank">
+            {{ result[1].split('/')[-1] }}
+          </a>
+        {% else %}
+          <a href="{{ url_for('serve_pdf', filename=result[1]) }}#page={{ result[2] }}" target="_blank">
+            {{ result[1].split('/')[-1] }}
+          </a>
+        {% endif %}
+      </div>
+      <!-- Page Number -->
+      <div style="width: 70px;">
+        Seite {{ result[2] }}
+      </div>
+      <!-- Relevance Color -->
+      <div style="width: 60px; text-align: center;">
+        <div style="width: 20px; height: 20px; background-color: {{ result[4] }}; border-radius: 50%; margin: auto;"></div>
+      </div>
+      <!-- Feedback Options -->
+      <div style="width: 140px; text-align: right;">
+        <div class="d-inline-flex align-items-center">
+          <input type="radio" name="feedback_{{ idx }}" id="feedback_up_{{ idx }}" value="up" style="margin: 0;">
+          <span style="margin-left: 5px; font-size: 1.2em;">👍</span>
+        </div>
+        <div class="d-inline-flex align-items-center ml-3">
+          <input type="radio" name="feedback_{{ idx }}" id="feedback_down_{{ idx }}" value="down" style="margin: 0;">
+          <span style="margin-left: 5px; font-size: 1.2em;">👎</span>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+
+    <!-- Additional Feedback -->
+    <div class="form-group mt-3">
+      <label for="comment">Anmerkungen (optional)</label>
+      <textarea class="form-control" id="comment" name="comment" placeholder="Anmerkungen (optional)" rows="2"></textarea>
+      <p class="small text-muted">Dieses Feedback dient zur Verbesserung des Systems. Bitte verwenden Sie keine persönlichen Daten.</p>
+    </div>
+    <button type="submit" class="btn btn-success">Feedback Abschicken</button>
+  </form>
+  {% endif %}
+  {% endif %}
+</div>
+{% endblock %}

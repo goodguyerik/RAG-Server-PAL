@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-3">
+  <h2>Dateien hochladen</h2>
+  <form method="POST" action="{{ url_for('upload') }}" enctype="multipart/form-data">
+    <div class="form-group">
+      <input type="file" name="files" multiple class="form-control-file">
+    </div>
+    <button type="submit" class="btn btn-primary">Dateien hochladen</button>
+  </form>
+</div>
+{% endblock %}

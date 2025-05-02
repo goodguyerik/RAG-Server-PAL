@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+  <h1>PDFs löschen</h1>
+  <form method="POST" action="{{ url_for('delete_all_pdfs') }}">
+    <button type="submit" class="btn btn-danger">Alle PDFs löschen</button>
+  </form>
+  <hr>
+  <h3>Verfügbare PDFs zum Löschen:</h3>
+  {% if pdf_names %}
+    <ul class="list-group">
+      {% for pdf in pdf_names %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          <a href="{{ url_for('serve_pdf', filename=pdf) }}" target="_blank">{{ pdf }}</a>
+          <form method="POST" action="{{ url_for('delete_single_pdf', pdf=pdf) }}" style="margin:0;">
+            <button type="submit" class="btn btn-sm btn-danger">Löschen</button>
+          </form>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <div class="alert alert-info">Keine PDFs zum Löschen verfügbar.</div>
+  {% endif %}
+{% endblock %}

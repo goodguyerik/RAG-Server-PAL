@@ -1,0 +1,29 @@
+services:
+  db:
+    image: postgres:latest
+    pull_policy: never
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: RetrievalSystem
+    ports:
+      - "5433:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  app:
+    build: .
+    environment:
+      - FLASK_APP=app:app
+      - FLASK_ENV=production
+      - DATABASE_URL=postgresql://postgres:root@db:5432/RetrievalSystem
+    ports:
+      - "9001:9000"  # Host port 9001 maps to container port 9000.
+    volumes:
+      - data_volume:/app/data
+    depends_on:
+      - db
+
+volumes:
+  db_data:
+  data_volume:

@@ -1,0 +1,6 @@
+services:
+  app:
+    gpus:
+      - driver: nvidia
+        count: all
+        capabilities: ["gpu"]
