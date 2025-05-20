@@ -89,8 +89,8 @@
       <small><strong>Hinweis:</strong> Diese Suchmaschine verwendet KI-Algorithmen, um Ihnen relevante und präzise Suchergebnisse zu liefern. Die Suchmaschine kann Fehler machen.</small>
     </div>
     <div class="mt-2">
-    	<a href="https://tu-dresden.de/impressum" class="mr-3" target="_blank" rel="noopener noreferrer">Impressum</a>
-   	<a href="https://tu-dresden.de/impressum#ck_datenschutz" class="mr-3" target="_blank" rel="noopener noreferrer">Datenschutz</a>
+    	<a href="{{ url_for('legal_notice') }}" class="mr-3">Impressum</a>
+       	<a href="{{ url_for('data_prot') }}" class="mr-3">Datenschutz</a>
     	<a href="{{ url_for('accessibility') }}" class="mr-3">Barrierefreiheit</a>
     </div>
   </footer>

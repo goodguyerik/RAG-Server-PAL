@@ -88,6 +88,14 @@ def index():
 def accessibility():
     return render_template('barrierefreiheit.html')
 
+@app.route('/impressum')
+def legal_notice():
+    return render_template('Impressum.html')
+
+@app.route('/datenschutz')
+def data_prot():
+    return render_template('Datenschutzerklaerung.html')
+
 @app.route('/search', methods=['GET', 'POST'])
 @login_required
 def search():

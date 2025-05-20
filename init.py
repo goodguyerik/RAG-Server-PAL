@@ -67,7 +67,7 @@ def get_connection(service_name):
             conn = psycopg2.connect(
                 database="RetrievalSystem",
                 user="postgres",
-                host=f"db_{service_name}",
+                host='localhost',#f"db_{service_name}",
                 password="root",
                 port=5432
             )
