@@ -38,7 +38,8 @@
       <!-- File Link -->
       <div style="flex: 1; padding-left: 15px;">
         {% if result[5] == 'video' %}
-          <a href="{{ url_for('serve_video', filename=result[1]) }}#t={{ result[2] }}" target="_blank">
+          {% set start = result[6] if result[6] is not none else 0 %}
+          <a href="{{ url_for('serve_video', filename=result[1]) }}#t={{ start }}" target="_blank">
             {{ result[1].split('/')[-1] }}
           </a>
         {% else %}

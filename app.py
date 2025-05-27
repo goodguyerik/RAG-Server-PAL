@@ -147,10 +147,34 @@ def search():
                 display_name = name
             updated_list.append((doc_id, display_name, page, score, color, file_type))
 
+
+        results_with_times = []
+        cursor = conn.cursor()
+        timestamp_pattern = re.compile(r"\[(\d{2}):(\d{2}):(\d{2})\]")
+        for doc_id, display_name, page, score, color, file_type in updated_list:
+            ts_seconds = None
+            if file_type == "video":
+                cursor.execute(
+                    "SELECT text FROM pages WHERE id = %s AND number = %s",
+                    (doc_id, page)
+                )
+                row = cursor.fetchone()
+                if row:
+                    text = row[0]
+                    m = timestamp_pattern.search(text)
+                    if m:
+                        h, m1, s = map(int, m.groups())
+                        ts_seconds = h*3600 + m1*60 + s
+            results_with_times.append(
+                (doc_id, display_name, page, score, color, file_type, ts_seconds)
+            )
+
+        results = list(enumerate(results_with_times))
+        
+
         log_id = log.log_data(conn, query, res, [[doc_id, page] for doc_id, page, score in rank], runtime)
         session['log_id'] = log_id
         session['topk'] = len(updated_list)
-        results = list(enumerate(updated_list))
         
         return render_template(
             'search.html',
