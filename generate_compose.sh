@@ -40,6 +40,7 @@ services:
       - "$HOST_PORT:9000"
     volumes:
       - data_volume_${SERVICE_NAME}:/app/data
+      - data_volume_${SERVICE_NAME}:/app/videos
     depends_on:
       - db_${SERVICE_NAME}
     gpus:
