@@ -6,6 +6,7 @@ import numpy as np
 import io
 import zipfile
 from flask import Flask, render_template, request, redirect, url_for, flash, session, send_from_directory, Response
+from flask import current_app as app
 from PIL import Image
 from functools import wraps  # New import for decorators
 
@@ -105,18 +106,29 @@ def search():
         query = query_expansion.expand_query(query)
 
         global bm25, doc_ids
+
+        pid = os.getpid()
+        t0 = time.perf_counter()
         bm25, doc_ids = bm25_retrieval.initialize_bm25(conn)
+        t1 = time.perf_counter()
+
         if len(doc_ids) == 0:
             flash("Keine Dokumente vorhanden. Bitte fügen Sie zuerst PDFs hinzu!")
             return render_template('search.html', query=query)
-
+	
+        t2 = time.perf_counter()
         scores = bm25_retrieval.retrieve_bm25(bm25, query)
+        t3 = time.perf_counter()
+
         res = bm25_retrieval.get_retrieved_doc_ids(doc_ids, scores, 10)
         if len(res) == 0:
             flash("Keine Treffer gefunden. Bitte versuchen Sie eine andere Suchanfrage!")
             return render_template('search.html', query=query)
-
+	
+        t4 = time.perf_counter()
         temp, runtime = retrieve_cross_encoder(conn, res, query, 5, 10)
+        t5 = time.perf_counter()
+
         rank = temp[0]
         names = temp[1]
         doc_dict = dict(names)
@@ -170,7 +182,12 @@ def search():
             )
 
         results = list(enumerate(results_with_times))
-        
+
+        t6 = time.perf_counter()
+        print(f"[pid={pid}] bm25Init     : {t1-t0:.3f}s", flush=True)
+        print(f"[pid={pid}] bm25     : {t3-t2:.3f}s", flush=True)
+        print(f"[pid={pid}] crossEncoder     : {t5-t4:.3f}s", flush=True)
+        print(f"[pid={pid}] otherStuff     : {t6-t5:.3f}s", flush=True)
 
         log_id = log.log_data(conn, query, res, [[doc_id, page] for doc_id, page, score in rank], runtime)
         session['log_id'] = log_id
