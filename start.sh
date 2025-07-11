@@ -20,4 +20,4 @@ SERVICE_NAME = "${SERVICE_NAME}"
 SECRET_KEY = "${SECRET_KEY}"
 EOF
 
-exec gunicorn --timeout 1200 -w 4 --log-level debug -b 0.0.0.0:$PORT app:app
+exec gunicorn --timeout 1200 -w 1 --log-level debug -b 0.0.0.0:$PORT app:app
