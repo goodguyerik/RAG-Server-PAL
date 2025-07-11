@@ -1,14 +1,6 @@
 import numpy as np
 import time
-import torch 
-from sentence_transformers.cross_encoder import CrossEncoder
-
-model_path = "./models/cross-electra"
-
-print("CUDA available:", torch.cuda.is_available())
-print("GPU count:", torch.cuda.device_count())
-device = "cuda" if torch.cuda.is_available() else "cpu"
-cross_model = CrossEncoder(model_path, device=device, local_files_only=True)
+import requests
 
 def get_page(conn, doc_id): 
     cursor = conn.cursor()
@@ -25,7 +17,7 @@ def get_retrieved_pages(conn, page_ids, score, k):
     cursor.execute(f"SELECT * FROM map WHERE id IN ({ids_str});")
     return res, cursor.fetchall()
 
-def retrieve_cross_encoder(conn, doc_ids, query, i, k):
+def retrieve_cross_encoder(conn, doc_ids, query, i, k, inference_url):
     start_time = time.time()
     page_content = []
     page_ids = []
@@ -34,6 +26,16 @@ def retrieve_cross_encoder(conn, doc_ids, query, i, k):
         page_ids.extend(temp[0])
         page_content.extend(temp[1])
     combs = [(query, content) for content in page_content]
-    outputs = cross_model.predict(combs).reshape(1, len(page_content))[0]
+
+    payload = {
+        'combs': combs,
+        'page_content': page_content
+    }
+
+    resp = requests.post(inference_url, json=payload, timeout=10)
+    resp.raise_for_status()
+    print(resp)
+    outputs = resp.json()["scores"]
+    outputs = np.array(outputs)
     end_time = time.time()
     return get_retrieved_pages(conn, page_ids, outputs, k), end_time - start_time

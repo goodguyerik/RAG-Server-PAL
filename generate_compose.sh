@@ -12,6 +12,16 @@ COMPOSE_FILE="docker-compose.generated.yml"
 cat <<EOF > $COMPOSE_FILE
 version: '3'
 services:
+  inference_${SERVICE_NAME}:
+    image: rag-app
+    command: gunicorn inference:app --workers 1 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:8001 --timeout 120
+    ports:
+      - "8001:8001"
+    gpus:
+      - driver: nvidia
+        count: all
+        capabilities: ["gpu"]
+
   db_${SERVICE_NAME}:
     image: postgres:latest
     pull_policy: never
@@ -36,6 +46,7 @@ services:
       PORT: 9000
       ADMIN_USERNAME: "$ADMIN_USER"
       ADMIN_PASSWORD: "$ADMIN_PASS"
+      INFERENCE_URL: "http://inference_${SERVICE_NAME}:8001/score"
     ports:
       - "$HOST_PORT:9000"
     volumes:
@@ -43,10 +54,6 @@ services:
       - data_volume_${SERVICE_NAME}:/app/videos
     depends_on:
       - db_${SERVICE_NAME}
-    gpus:
-      - driver: nvidia
-        count: all
-        capabilities: ["gpu"]
 
 volumes:
   db_data_${SERVICE_NAME}:

@@ -51,6 +51,7 @@ except ImportError:
         ADMIN_USERNAME = "admin"
         ADMIN_PASSWORD = "admin"
         SERVICE_NAME = "db"
+        INFERENCE_URL = 'http://inference_:8001/score'
     config = Config()
 
 # Make dynamic configuration available in all templates.
@@ -59,6 +60,7 @@ def inject_config():
     return dict(
         company_name=config.COMPANY_NAME,
         logo_path=config.LOGO_PATH
+        inference_url=config.INFERENCE_URL
     )
 
 # ------------------ Global Initialization ------------------
@@ -126,7 +128,7 @@ def search():
             return render_template('search.html', query=query)
 	
         t4 = time.perf_counter()
-        temp, runtime = retrieve_cross_encoder(conn, res, query, 5, 10)
+        temp, runtime = retrieve_cross_encoder(conn, res, query, 5, 10, inference_url)
         t5 = time.perf_counter()
 
         rank = temp[0]
