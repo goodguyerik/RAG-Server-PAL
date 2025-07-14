@@ -32,7 +32,7 @@ def retrieve_cross_encoder(conn, doc_ids, query, i, k, inference_url):
         'page_content': page_content
     }
 
-    resp = requests.post(inference_url, json=payload, timeout=10)
+    resp = requests.post(inference_url, json=payload, timeout=(10, 300))
     resp.raise_for_status()
     print(resp)
     outputs = resp.json()["scores"]
