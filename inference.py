@@ -1,12 +1,16 @@
 import torch 
+import numpy as np
+import asyncio
 from fastapi import FastAPI
 from pydantic import BaseModel
 from sentence_transformers.cross_encoder import CrossEncoder
+from concurrent.futures import ThreadPoolExecutor
 
 torch.set_num_threads(1)
 torch.set_num_interop_threads(1)
 
 app = FastAPI()
+executor = ThreadPoolExecutor(max_workers=4)
 
 model_path = "./models/cross-electra"
 
@@ -23,8 +27,12 @@ class ScoreResponse(BaseModel):
     scores: list[float]
 
 @app.post("/score")
-def score(req: ScoreRequest):
+async def score(req: ScoreRequest):
     combs = req.combs
     page_content = req.page_content
-    outputs = cross_model.predict(combs).reshape(1, len(page_content))[0]
+    
+    loop = asyncio.get_running_loop()
+    outputs = await loop.run_in_executor(executor, cross_model.predict, combs)
+
+    outputs = outputs.reshape(1, len(page_content))[0].tolist()
     return ScoreResponse(scores=outputs)
