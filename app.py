@@ -17,6 +17,7 @@ from cross_encoder import retrieve_cross_encoder
 import query_expansion
 import log
 import bm25_retrieval
+import handle_bm25_dump
 
 app = Flask(__name__)
 
@@ -51,7 +52,7 @@ except ImportError:
         ADMIN_USERNAME = "admin"
         ADMIN_PASSWORD = "admin"
         SERVICE_NAME = "db"
-        INFERENCE_URL = 'http://inference_:8001/score'
+        INFERENCE_URL = 'http://localhost:8001/score'
     config = Config()
 
 # Make dynamic configuration available in all templates.
@@ -70,6 +71,7 @@ query_expansion.update_synonym_list(conn)
 
 # Initially build the BM25 index.
 bm25, doc_ids = bm25_retrieval.initialize_bm25(conn)
+handle_bm25_dump.modify_bm25_dump(conn, bm25, doc_ids, 'insert')
 keycaps = ['1️⃣','2️⃣','3️⃣','4️⃣','5️⃣','6️⃣','7️⃣','8️⃣','9️⃣','🔟']
 
 # ------------------ Helper Function ------------------
@@ -111,7 +113,7 @@ def search():
 
         pid = os.getpid()
         t0 = time.perf_counter()
-        bm25, doc_ids = bm25_retrieval.initialize_bm25(conn)
+        bm25, doc_ids = handle_bm25_dump.fetch_latest_bm25(conn)
         t1 = time.perf_counter()
 
         if len(doc_ids) == 0:
@@ -128,7 +130,7 @@ def search():
             return render_template('search.html', query=query)
 	
         t4 = time.perf_counter()
-        temp, runtime = retrieve_cross_encoder(conn, res, query, 5, 10, config.INFERENCE_URL)
+        temp, runtime = retrieve_cross_encoder(conn, res, query, 5, 10, config.INFERENCE_URL)#'http://localhost:8001/score')
         t5 = time.perf_counter()
 
         rank = temp[0]
@@ -265,8 +267,10 @@ def upload():
                     file.save(video_file_path)
                     video_count += 1
         flash(f"{pdf_count} PDFs und {video_count} Videos wurden erfolgreich hochgeladen!")
-        global bm25, doc_ids
+
         bm25, doc_ids = bm25_retrieval.initialize_bm25(conn)
+        handle_bm25_dump.modify_bm25_dump(conn, bm25, doc_ids, 'update')
+        
         return redirect(url_for('upload'))
     return render_template('upload.html')
 
@@ -285,8 +289,10 @@ def delete_all_pdfs():
         delete_pdf(conn, file_path)
     flash("Alle PDFs (und zugehörige Videos, falls vorhanden) wurden erfolgreich gelöscht!")
     time.sleep(2)
-    global bm25, doc_ids
+    
     bm25, doc_ids = bm25_retrieval.initialize_bm25(conn)
+    handle_bm25_dump.modify_bm25_dump(conn, bm25, doc_ids, 'update')
+    
     return redirect(url_for('pdf_delete'))
 
 @app.route('/pdf/delete/<path:pdf>', methods=['POST'])
@@ -296,8 +302,10 @@ def delete_single_pdf(pdf):
     delete_pdf(conn, file_path)
     flash(f"Datei '{pdf}' (und zugehöriges Video, falls vorhanden) wurde erfolgreich gelöscht!")
     time.sleep(2)
-    global bm25, doc_ids
+            
     bm25, doc_ids = bm25_retrieval.initialize_bm25(conn)
+    handle_bm25_dump.modify_bm25_dump(conn, bm25, doc_ids, 'update')
+    
     return redirect(url_for('pdf_delete'))
 
 @app.route('/data/<path:filename>')

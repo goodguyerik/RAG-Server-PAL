@@ -47,6 +47,12 @@ log_table = """CREATE TABLE IF NOT EXISTS log (
                     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 );"""
 
+bm25_table = """CREATE TABLE IF NOT EXISTS bm25 (
+                    id SERIAL PRIMARY KEY,
+                    bm25_object BYTEA NOT NULL,
+                    doc_ids INT[]
+                );"""
+
 # New synonym tables for managing synonyms dynamically.
 synonym_groups_table = """CREATE TABLE IF NOT EXISTS synonym_groups (
                             id SERIAL PRIMARY KEY
@@ -84,6 +90,7 @@ def check_and_create_tables(conn):
         cursor.execute(text_table)
         cursor.execute(pages_table)
         cursor.execute(log_table)
+        cursor.execute(bm25_table)
         cursor.execute(synonym_groups_table)
         cursor.execute(synonyms_table)
         conn.commit()
