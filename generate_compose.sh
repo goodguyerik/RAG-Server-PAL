@@ -13,8 +13,11 @@ cat <<EOF > $COMPOSE_FILE
 version: '3'
 services:
   inference_${SERVICE_NAME}:
+    build:
+      context: .
+      dockerfile: Dockerfile
     image: rag-app
-    command: gunicorn inference:app --workers 1 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:8001 --timeout 120
+    command: gunicorn inference:app --chdir /app --workers 1 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:8001 --timeout 120
     ports:
       - "8001:8001"
     gpus:

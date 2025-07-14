@@ -22,4 +22,4 @@ SECRET_KEY = "${SECRET_KEY}"
 INFERENCE_URL = "${INFERENCE_URL}"
 EOF
 
-exec gunicorn --timeout 1200 -w 1 --log-level debug -b 0.0.0.0:$PORT app:app
+exec gunicorn --timeout 1200 -w 4 --log-level debug -b 0.0.0.0:$PORT app:app

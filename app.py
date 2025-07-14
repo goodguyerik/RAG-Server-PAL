@@ -59,7 +59,7 @@ except ImportError:
 def inject_config():
     return dict(
         company_name=config.COMPANY_NAME,
-        logo_path=config.LOGO_PATH
+        logo_path=config.LOGO_PATH,
         inference_url=config.INFERENCE_URL
     )
 
@@ -128,7 +128,7 @@ def search():
             return render_template('search.html', query=query)
 	
         t4 = time.perf_counter()
-        temp, runtime = retrieve_cross_encoder(conn, res, query, 5, 10, inference_url)
+        temp, runtime = retrieve_cross_encoder(conn, res, query, 5, 10, config.INFERENCE_URL)
         t5 = time.perf_counter()
 
         rank = temp[0]
