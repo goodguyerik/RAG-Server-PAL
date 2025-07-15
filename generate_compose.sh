@@ -19,7 +19,7 @@ services:
     image: rag-app
     command: gunicorn inference:app --chdir /app --workers 1 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:8001 --timeout 120
     ports:
-      - "8001:8001"
+      - "$((HOST_PORT + 2000)):8001"
     gpus:
       - driver: nvidia
         count: all
