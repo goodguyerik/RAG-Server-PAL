@@ -105,9 +105,9 @@ def data_prot():
 @login_required
 def search():
     if request.method == 'POST':
-        query = request.form.get('query', '')
-        query = re.sub(r"[()?\[\]{}<>]", "", query)
-        query = query_expansion.expand_query(query)
+        original_query = request.form.get('query', '')
+        original_query = re.sub(r"[()?\[\]{}<>]", "", original_query)
+        query = query_expansion.expand_query(original_query)
 
         global bm25, doc_ids
 
@@ -118,7 +118,7 @@ def search():
 
         if len(doc_ids) == 0:
             flash("Keine Dokumente vorhanden. Bitte fügen Sie zuerst PDFs hinzu!")
-            return render_template('search.html', query=query)
+            return render_template('search.html', query=original_query)
 	
         t2 = time.perf_counter()
         scores = bm25_retrieval.retrieve_bm25(bm25, query)
@@ -127,10 +127,11 @@ def search():
         res = bm25_retrieval.get_retrieved_doc_ids(doc_ids, scores, 10)
         if len(res) == 0:
             flash("Keine Treffer gefunden. Bitte versuchen Sie eine andere Suchanfrage!")
-            return render_template('search.html', query=query)
+            return render_template('search.html', query=original_query)
 	
         t4 = time.perf_counter()
-        temp, runtime = retrieve_cross_encoder(conn, res, query, 5, 10, config.INFERENCE_URL)#'http://localhost:8001/score')
+        temp, runtime = retrieve_cross_encoder(conn, res, query, 5, 10, config.INFERENCE_URL)
+        #temp, runtime = retrieve_cross_encoder(conn, res, query, 5, 10, 'http://localhost:8001/score')
         t5 = time.perf_counter()
 
         rank = temp[0]
@@ -199,7 +200,7 @@ def search():
         
         return render_template(
             'search.html',
-            query=query,
+            query=original_query,
             results=results,
             log_id=log_id,
             keycaps=keycaps
