@@ -383,7 +383,6 @@ def download_all():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    # Use the config-based credentials for the initial login.
     ADMIN_USERNAME = config.ADMIN_USERNAME
     ADMIN_PASSWORD = config.ADMIN_PASSWORD
 
