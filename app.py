@@ -321,6 +321,17 @@ def video_player(filename):
     t = request.args.get('t', default=0, type=int)
     return render_template('video_player.html', filename=filename, t=t)
 
+@app.route('/data/<path:filename>')
+@login_required
+def serve_pdf(filename):
+    return send_from_directory("data", filename)
+
+
+@app.route('/video/<path:filename>')
+@login_required
+def serve_video(filename):
+    return send_from_directory("videos", filename)
+
 @app.route('/synonyms', methods=['GET', 'POST'])
 @admin_required
 def synonyms_management():
