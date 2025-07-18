@@ -309,15 +309,17 @@ def delete_single_pdf(pdf):
     
     return redirect(url_for('pdf_delete'))
 
-@app.route('/data/<path:filename>')
+@app.route('/pdf_viewer/<path:filename>')
 @login_required
-def serve_pdf(filename):
-    return send_from_directory("data", filename)
+def pdf_viewer(filename):
+    page = request.args.get('page', default=1, type=int)
+    return render_template('pdf_viewer.html', filename=filename, page=page)
 
-@app.route('/video/<path:filename>')
+@app.route('/video_player/<path:filename>')
 @login_required
-def serve_video(filename):
-    return send_from_directory("videos", filename)
+def video_player(filename):
+    t = request.args.get('t', default=0, type=int)
+    return render_template('video_player.html', filename=filename, t=t)
 
 @app.route('/synonyms', methods=['GET', 'POST'])
 @admin_required

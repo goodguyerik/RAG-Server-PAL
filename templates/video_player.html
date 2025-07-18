@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-3">
+  <h3 class="text-center mb-3">Video: {{ filename }}</h3>
+  <video id="video" controls width="100%" preload="metadata">
+    <source src="{{ url_for('serve_video', filename=filename) }}" type="video/mp4">
+    Ihr Browser unterstützt das Video-Tag nicht.
+  </video>
+</div>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const video = document.getElementById('video');
+    const startTime = {{ t }};
+    if (!isNaN(startTime) && startTime > 0) {
+      video.currentTime = startTime;
+    }
+    video.play();
+  });
+</script>
+{% endblock %}

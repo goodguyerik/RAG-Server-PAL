@@ -1,0 +1,29 @@
+<!-- templates/pdf_viewer.html -->
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-3">
+  <h3 class="text-center mb-3">PDF: {{ filename }}</h3>
+</div>
+<script>
+// simple Safari detection
+function isSafari() {
+  return /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+}
+const pdfUrl    = "{{ url_for('serve_pdf', filename=filename) }}";
+const pageParam = {{ page }};
+if (isSafari()) {
+  // Safari: drop into raw PDF with #page=…
+  window.location.href = pdfUrl + "#page=" + pageParam;
+} else {
+  // Others: embed inline
+  document.write(`
+    <embed
+      src="${pdfUrl}#page=${pageParam}"
+      type="application/pdf"
+      width="100%"
+      height="800px">
+    </embed>
+  `);
+}
+</script>
+{% endblock %}
