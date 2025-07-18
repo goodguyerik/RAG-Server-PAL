@@ -326,7 +326,6 @@ def video_player(filename):
 def serve_pdf(filename):
     return send_from_directory("data", filename)
 
-
 @app.route('/video/<path:filename>')
 @login_required
 def serve_video(filename):
