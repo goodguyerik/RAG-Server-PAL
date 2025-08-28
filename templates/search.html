@@ -1,80 +1,120 @@
 {% extends "base.html" %}
 {% block content %}
+
+<style>
+  /* Mobile-first layout for result rows */
+  .result-row { display: block; }
+  .result-file { font-weight: 500; }
+  .result-meta { font-size: .9em; color: #666; }
+
+  /* Desktop/tablet layout switches to table-like columns */
+  @media (min-width: 768px) {
+    .result-row { display: flex; align-items: center; font-size: .9em; }
+    .col-idx   { width: 40px; text-align: center; }
+    .col-file  { flex: 1; padding-left: 15px; }
+    .col-page  { width: 80px; }
+    .col-score { width: 70px; text-align: center; }
+    .col-fb    { width: 160px; text-align: right; }
+  }
+
+  .results-header { color: #555; font-size: .9em; }
+</style>
+
 <div class="container py-3">
   <h3 class="text-center mb-3">Bitte geben Sie Ihre Suchanfrage ein.</h3>
+
   <form method="POST" action="{{ url_for('search') }}">
     <div class="form-group">
       <textarea class="form-control" id="query" name="query"
         placeholder="Wie kann ich die Gasart bei einem Warmlufterzeuger wechseln?"
-        rows="2">{{ query or '' }}</textarea>
+        rows="3">{{ query or '' }}</textarea>
     </div>
-    <button type="submit" class="btn btn-primary">Suche</button>
+    <button type="submit" class="btn btn-primary mb-3">Suche</button>
   </form>
 
   {% if results is defined %}
-  <hr>
-  {% if results|length == 0 %}
-    <div class="alert alert-info">Keine Treffer gefunden!</div>
-  {% else %}
-  <form method="POST" action="{{ url_for('feedback') }}">
-    <input type="hidden" name="log_id" value="{{ log_id }}">
-    <input type="hidden" name="topk" value="{{ results|length }}">
+    <hr>
+    {% if results|length == 0 %}
+      <div class="alert alert-info">Keine Treffer gefunden!</div>
+    {% else %}
 
-    <div class="d-flex align-items-center font-weight-bold pb-2 mb-2 border-bottom" style="color: #555; font-size: 0.9em;">
-      <div style="width: 40px; text-align: center;">#</div>
-      <div style="flex: 1; padding-left: 15px;">Datei</div>
-      <div style="width: 70px;">Seite</div>
-      <div style="width: 60px; text-align: center;">Relevanz</div>
-      <div style="width: 140px; text-align: right;">Feedback</div>
-    </div>
+    <form method="POST" action="{{ url_for('feedback') }}">
+      <input type="hidden" name="log_id" value="{{ log_id }}">
+      <input type="hidden" name="topk" value="{{ results|length }}">
 
-    {% for idx, result in results %}
-    {% set (doc_id, display_name, page, score, color, file_type, ts_seconds) = result %}
-    <div class="d-flex align-items-center py-2 border-bottom" style="font-size: 0.9em;">
-      <div style="width: 40px; text-align: center;">
-        <span>{{ keycaps[idx] }}</span>
+      <!-- Header only on md+ screens -->
+      <div class="d-none d-md-flex align-items-center results-header pb-2 mb-2 border-bottom">
+        <div class="col-idx">#</div>
+        <div class="col-file">Datei</div>
+        <div class="col-page">Seite</div>
+        <div class="col-score">Relevanz</div>
+        <div class="col-fb">Feedback</div>
       </div>
-      <div style="flex: 1; padding-left: 15px;">
-        {% if file_type == 'video' %}
-          {# link into our new video‐player route #}
-          <a href="{{ url_for('video_player', filename=display_name, t=ts_seconds or 0) }}" target="_blank">
-            {{ display_name }}
-          </a>
-        {% else %}
-          {# link into our new PDF‐viewer route #}
-          <a href="{{ url_for('pdf_viewer', filename=display_name, page=page) }}" target="_blank">
-            {{ display_name }}
-          </a>
-        {% endif %}
-      </div>
-      <div style="width: 70px;">Seite {{ page }}</div>
-      <div style="width: 60px; text-align: center;">
-        <div style="width: 20px; height: 20px; background-color: {{ color }}; border-radius: 50%; margin: auto;"></div>
-      </div>
-      <div style="width: 140px; text-align: right;">
-        <div class="d-inline-flex align-items-center">
-          <input type="radio" name="feedback_{{ idx }}" id="feedback_up_{{ idx }}" value="up">
-          <span style="margin-left: 5px; font-size: 1.2em;">👍</span>
+
+      {% for idx, result in results %}
+      {% set (doc_id, display_name, page, score, color, file_type, ts_seconds) = result %}
+
+      <div class="result-row py-2 border-bottom">
+        <!-- index -->
+        <div class="d-md-none small text-muted mb-1"># {{ keycaps[idx] }}</div>
+        <div class="d-none d-md-block col-idx"><span>{{ keycaps[idx] }}</span></div>
+
+        <!-- file -->
+        <div class="result-file d-md-block col-file">
+          {% if file_type == 'video' %}
+            <a href="{{ url_for('video_player', filename=display_name, t=ts_seconds or 0) }}" target="_blank">
+              {{ display_name }}
+            </a>
+          {% else %}
+            <a href="{{ url_for('pdf_viewer', filename=display_name, page=page) }}" target="_blank">
+              {{ display_name }}
+            </a>
+          {% endif %}
         </div>
-        <div class="d-inline-flex align-items-center ml-3">
-          <input type="radio" name="feedback_{{ idx }}" id="feedback_down_{{ idx }}" value="down">
-          <span style="margin-left: 5px; font-size: 1.2em;">👎</span>
+
+        <!-- meta (stacked on mobile) -->
+        <div class="d-md-none result-meta mt-1">
+          Seite {{ page }} &middot;
+          <span class="align-middle" style="display:inline-block;width:14px;height:14px;background-color:{{ color }};border-radius:50%;vertical-align:middle;"></span>
+        </div>
+
+        <!-- desktop columns -->
+        <div class="d-none d-md-block col-page">Seite {{ page }}</div>
+        <div class="d-none d-md-block col-score">
+          <div style="width:20px;height:20px;background-color:{{ color }};border-radius:50%;margin:auto;"></div>
+        </div>
+
+        <!-- feedback -->
+        <div class="mt-2 d-md-none">
+          <label class="mr-3"><input type="radio" name="feedback_{{ idx }}" value="up"> 👍</label>
+          <label><input type="radio" name="feedback_{{ idx }}" value="down"> 👎</label>
+        </div>
+        <div class="d-none d-md-block col-fb">
+          <div class="d-inline-flex align-items-center">
+            <input type="radio" name="feedback_{{ idx }}" id="feedback_up_{{ idx }}" value="up">
+            <span class="ml-1" style="font-size:1.2em;">👍</span>
+          </div>
+          <div class="d-inline-flex align-items-center ml-3">
+            <input type="radio" name="feedback_{{ idx }}" id="feedback_down_{{ idx }}" value="down">
+            <span class="ml-1" style="font-size:1.2em;">👎</span>
+          </div>
         </div>
       </div>
-    </div>
-    {% endfor %}
+      {% endfor %}
 
-    <div class="form-group mt-3">
-      <label for="comment">Anmerkungen (optional)</label>
-      <textarea class="form-control" id="comment" name="comment"
-        placeholder="Anmerkungen (optional)" rows="2"></textarea>
-      <p class="small text-muted">
-        Dieses Feedback dient zur Verbesserung des Systems. Bitte verwenden Sie keine persönlichen Daten.
-      </p>
-    </div>
-    <button type="submit" class="btn btn-success">Feedback Abschicken</button>
-  </form>
-  {% endif %}
+      <div class="form-group mt-3">
+        <label for="comment">Anmerkungen (optional)</label>
+        <textarea class="form-control" id="comment" name="comment"
+          placeholder="Anmerkungen (optional)" rows="2"></textarea>
+        <p class="small text-muted mb-0">
+          Dieses Feedback dient zur Verbesserung des Systems. Bitte verwenden Sie keine persönlichen Daten.
+        </p>
+      </div>
+
+      <button type="submit" class="btn btn-success">Feedback Abschicken</button>
+    </form>
+
+    {% endif %}
   {% endif %}
 </div>
 {% endblock %}
