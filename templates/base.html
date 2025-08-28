@@ -2,40 +2,41 @@
 <html lang="de">
 <head>
   <meta charset="utf-8">
+  <!-- Mobile scaling -->
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
   <title>Suchassistent</title>
 
+  <!-- Bootstrap 4 -->
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
 
   <style>
-    .pdf-link { color: #1a0dab; text-decoration: underline; }
+    .pdf-link { color:#1a0dab; text-decoration:underline; }
 
-    html { font-size: clamp(15px, 1.6vw, 16px); }
-
+    /* Footer: fixed on >= md, normal on small screens */
     .footer {
-      background-color: #f8f9fa;
-      text-align: center;
-      padding: 10px;
-      border-top: 1px solid #e7e7e7;
+      background:#f8f9fa; text-align:center; padding:10px;
+      border-top:1px solid #e7e7e7;
     }
-    @media (min-width: 768px) {
-      .footer { position: fixed; bottom: 0; width: 100%; }
-      .content-container { padding-bottom: 70px; }
+    .content-container { padding-bottom: 24px; }
+    @media (min-width:768px){
+      .footer { position:fixed; bottom:0; width:100%; }
+      .content-container { padding-bottom: 80px; }
     }
 
-    .navbar-brand img {
-      height: 30px;
-      margin-right: 10px;
-    }
+    /* Left/right breathing room on small screens */
+    .page-wrap { padding-left: 18px; padding-right: 18px; }
+
+    /* Navbar logo */
+    .navbar-brand img { height:30px; margin-right:10px; }
   </style>
 </head>
 <body>
+  <!-- Responsive navbar -->
   <nav class="navbar navbar-expand-lg navbar-light bg-light">
     <a class="navbar-brand d-flex align-items-center" href="{{ url_for('search') }}">
       <img src="{{ url_for('static', filename=logo_path) }}" alt="{{ company_name }}">
       <span>Suchassistent - {{ company_name }}</span>
     </a>
-
     <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navMain"
             aria-controls="navMain" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
@@ -55,7 +56,6 @@
           {% endif %}
         </ul>
       {% endif %}
-
       <ul class="navbar-nav ml-auto">
         {% if session.logged_in %}
           <li class="nav-item"><a class="nav-link" href="{{ url_for('logout') }}">Logout</a></li>
@@ -66,15 +66,17 @@
     </div>
   </nav>
 
-  <div class="container mt-4 content-container">
-    {% with messages = get_flashed_messages() %}
-      {% if messages %}
-        {% for message in messages %}
-          <div class="alert alert-info">{{ message }}</div>
-        {% endfor %}
-      {% endif %}
-    {% endwith %}
-    {% block content %}{% endblock %}
+  <div class="container content-container">
+    <div class="page-wrap">
+      {% with messages = get_flashed_messages() %}
+        {% if messages %}
+          {% for message in messages %}
+            <div class="alert alert-info mt-3">{{ message }}</div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+      {% block content %}{% endblock %}
+    </div>
   </div>
 
   <footer class="footer">
@@ -88,6 +90,7 @@
     </div>
   </footer>
 
+  <!-- Bootstrap JS -->
   <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" crossorigin="anonymous"></script>
   <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js" crossorigin="anonymous"></script>

@@ -2,34 +2,37 @@
 {% block content %}
 
 <style>
-  /* Mobile-first layout for result rows */
-  .result-row { display: block; }
-  .result-file { font-weight: 500; }
-  .result-meta { font-size: .9em; color: #666; }
+  /* --- Mobile card layout (shown < md) --- */
+  .result-card { border:1px solid #ececec; border-radius:.8rem; }
+  .result-card + .result-card { margin-top: .9rem; }
+  .dot { width:12px; height:12px; border-radius:50%; display:inline-block; vertical-align:middle; }
+  .idx-pill { display:inline-block; min-width:1.6rem; text-align:center; padding:.1rem .4rem; border-radius:.6rem; background:#f2f2f2; font-weight:600; }
+  .btn-feedback { padding:.15rem .45rem; }
+  .file-link { word-break: break-word; }
 
-  /* Desktop/tablet layout switches to table-like columns */
-  @media (min-width: 768px) {
-    .result-row { display: flex; align-items: center; font-size: .9em; }
-    .col-idx   { width: 40px; text-align: center; }
-    .col-file  { flex: 1; padding-left: 15px; }
-    .col-page  { width: 80px; }
-    .col-score { width: 70px; text-align: center; }
-    .col-fb    { width: 160px; text-align: right; }
+  /* --- Desktop/table layout (shown >= md) --- */
+  @media (min-width:768px) {
+    .results-header { color:#555; font-size:.9em; }
+    .row-table { display:flex; align-items:center; font-size:.9em; }
+    .col-idx   { width:40px; text-align:center; }
+    .col-file  { flex:1; padding-left:15px; }
+    .col-page  { width:80px; }
+    .col-score { width:70px; text-align:center; }
+    .col-fb    { width:160px; text-align:right; }
+    .circle { width:20px; height:20px; border-radius:50%; margin:auto; }
   }
-
-  .results-header { color: #555; font-size: .9em; }
 </style>
 
-<div class="container py-3">
+<div class="py-3">
   <h3 class="text-center mb-3">Bitte geben Sie Ihre Suchanfrage ein.</h3>
 
-  <form method="POST" action="{{ url_for('search') }}">
+  <form method="POST" action="{{ url_for('search') }}" class="mb-3">
     <div class="form-group">
       <textarea class="form-control" id="query" name="query"
         placeholder="Wie kann ich die Gasart bei einem Warmlufterzeuger wechseln?"
         rows="3">{{ query or '' }}</textarea>
     </div>
-    <button type="submit" class="btn btn-primary mb-3">Suche</button>
+    <button type="submit" class="btn btn-primary mb-2">Suche</button>
   </form>
 
   {% if results is defined %}
@@ -42,7 +45,7 @@
       <input type="hidden" name="log_id" value="{{ log_id }}">
       <input type="hidden" name="topk" value="{{ results|length }}">
 
-      <!-- Header only on md+ screens -->
+      <!-- Desktop header -->
       <div class="d-none d-md-flex align-items-center results-header pb-2 mb-2 border-bottom">
         <div class="col-idx">#</div>
         <div class="col-file">Datei</div>
@@ -54,42 +57,66 @@
       {% for idx, result in results %}
       {% set (doc_id, display_name, page, score, color, file_type, ts_seconds) = result %}
 
-      <div class="result-row py-2 border-bottom">
-        <!-- index -->
-        <div class="d-md-none small text-muted mb-1"># {{ keycaps[idx] }}</div>
-        <div class="d-none d-md-block col-idx"><span>{{ keycaps[idx] }}</span></div>
+      <!-- MOBILE CARD (visible < md) -->
+      <div class="card result-card shadow-sm d-md-none">
+        <div class="card-body p-3">
+          <div class="d-flex align-items-start">
+            <div class="mr-2 idx-pill"># {{ keycaps[idx] }}</div>
+            <div class="flex-grow-1">
+              {% if file_type == 'video' %}
+                <a class="file-link"
+                   href="{{ url_for('video_player', filename=display_name, t=ts_seconds or 0) }}"
+                   target="_blank" rel="noopener">
+                   {{ display_name }}
+                </a>
+              {% else %}
+                <!-- Serve both: query & fragment so raw-PDF and viewer both jump -->
+                <a class="file-link"
+                   href="{{ url_for('pdf_viewer', filename=display_name, page=page) }}#page={{ page }}"
+                   target="_blank" rel="noopener">
+                   {{ display_name }}
+                </a>
+              {% endif %}
+            </div>
+          </div>
+          <div class="mt-2 small text-muted">
+            Seite {{ page }} <span class="mx-2">·</span>
+            <span class="dot" style="background-color: {{ color }};"></span>
+          </div>
+          <div class="mt-2">
+            <div class="btn-group btn-group-toggle" data-toggle="buttons">
+              <label class="btn btn-outline-success btn-sm btn-feedback">
+                <input type="radio" name="feedback_{{ idx }}" value="up" autocomplete="off"> 👍
+              </label>
+              <label class="btn btn-outline-danger btn-sm btn-feedback">
+                <input type="radio" name="feedback_{{ idx }}" value="down" autocomplete="off"> 👎
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
 
-        <!-- file -->
-        <div class="result-file d-md-block col-file">
+      <!-- DESKTOP ROW (visible >= md) -->
+      <div class="row-table py-2 border-bottom d-none d-md-flex">
+        <div class="col-idx"><span>{{ keycaps[idx] }}</span></div>
+        <div class="col-file">
           {% if file_type == 'video' %}
-            <a href="{{ url_for('video_player', filename=display_name, t=ts_seconds or 0) }}" target="_blank">
+            <a href="{{ url_for('video_player', filename=display_name, t=ts_seconds or 0) }}" target="_blank" rel="noopener">
               {{ display_name }}
             </a>
           {% else %}
-            <a href="{{ url_for('pdf_viewer', filename=display_name, page=page) }}" target="_blank">
+            <!-- same double-target link -->
+            <a href="{{ url_for('pdf_viewer', filename=display_name, page=page) }}#page={{ page }}"
+               target="_blank" rel="noopener">
               {{ display_name }}
             </a>
           {% endif %}
         </div>
-
-        <!-- meta (stacked on mobile) -->
-        <div class="d-md-none result-meta mt-1">
-          Seite {{ page }} &middot;
-          <span class="align-middle" style="display:inline-block;width:14px;height:14px;background-color:{{ color }};border-radius:50%;vertical-align:middle;"></span>
+        <div class="col-page">Seite {{ page }}</div>
+        <div class="col-score">
+          <div class="circle" style="background-color: {{ color }};"></div>
         </div>
-
-        <!-- desktop columns -->
-        <div class="d-none d-md-block col-page">Seite {{ page }}</div>
-        <div class="d-none d-md-block col-score">
-          <div style="width:20px;height:20px;background-color:{{ color }};border-radius:50%;margin:auto;"></div>
-        </div>
-
-        <!-- feedback -->
-        <div class="mt-2 d-md-none">
-          <label class="mr-3"><input type="radio" name="feedback_{{ idx }}" value="up"> 👍</label>
-          <label><input type="radio" name="feedback_{{ idx }}" value="down"> 👎</label>
-        </div>
-        <div class="d-none d-md-block col-fb">
+        <div class="col-fb">
           <div class="d-inline-flex align-items-center">
             <input type="radio" name="feedback_{{ idx }}" id="feedback_up_{{ idx }}" value="up">
             <span class="ml-1" style="font-size:1.2em;">👍</span>
