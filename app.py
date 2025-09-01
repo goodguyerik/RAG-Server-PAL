@@ -6,6 +6,7 @@ import numpy as np
 import io
 import zipfile
 from flask import Flask, render_template, request, redirect, url_for, flash, session, send_from_directory, Response
+from markupsafe import Markup
 from flask import current_app as app
 from PIL import Image
 from functools import wraps  # New import for decorators
@@ -331,10 +332,21 @@ def serve_pdf(filename):
 def serve_video(filename):
     return send_from_directory("videos", filename)
 
+def highlight(text, q):
+    if not q:
+        return text
+    pattern = re.compile(re.escape(q), re.IGNORECASE)
+    return Markup(pattern.sub(lambda m: f"<mark>{m.group(0)}</mark>", text))
+
+app.jinja_env.filters['highlight'] = highlight
+
 @app.route('/synonyms', methods=['GET', 'POST'])
 @admin_required
 def synonyms_management():
     cursor = conn.cursor()
+    # carry over q for POST redirects and rendering
+    q = request.args.get('q', '', type=str)
+
     if request.method == 'POST':
         action = request.form.get('action')
         if action == 'add':
@@ -345,35 +357,59 @@ def synonyms_management():
                     cursor.execute("INSERT INTO synonym_groups DEFAULT VALUES RETURNING id")
                     group_id = cursor.fetchone()[0]
                     for word in word_list:
-                        cursor.execute("INSERT INTO synonyms (group_id, word) VALUES (%s, %s)", (group_id, word))
+                        cursor.execute(
+                            "INSERT INTO synonyms (group_id, word) VALUES (%s, %s)",
+                            (group_id, word)
+                        )
                     conn.commit()
+
         elif action == 'delete':
             group_id = request.form.get('group_id')
             if group_id:
                 cursor.execute("DELETE FROM synonym_groups WHERE id = %s", (group_id,))
                 conn.commit()
+
         elif action == 'update':
             group_id = request.form.get('group_id')
             words = request.form.get('words')
-            if group_id and words:
+            if group_id and words is not None:
                 cursor.execute("DELETE FROM synonyms WHERE group_id = %s", (group_id,))
                 word_list = [w.strip() for w in words.split(',') if w.strip()]
                 for word in word_list:
-                    cursor.execute("INSERT INTO synonyms (group_id, word) VALUES (%s, %s)", (group_id, word))
+                    cursor.execute(
+                        "INSERT INTO synonyms (group_id, word) VALUES (%s, %s)",
+                        (group_id, word)
+                    )
                 conn.commit()
+
         query_expansion.update_synonym_list(conn)
         flash("Synonyme aktualisiert!")
-        return redirect(url_for('synonyms_management'))
+        # keep search after actions
+        return redirect(url_for('synonyms_management', q=q) if q else url_for('synonyms_management'))
+
+    # GET: list groups (filtered if q present)
+    if q:
+        cursor.execute("""
+            SELECT sg.id,
+                   string_agg(s.word, ', ' ORDER BY s.word) AS words
+            FROM synonym_groups sg
+            JOIN synonyms s ON s.group_id = sg.id
+            WHERE s.word ILIKE %s
+            GROUP BY sg.id
+            ORDER BY sg.id;
+        """, (f"%{q}%",))
     else:
         cursor.execute("""
-            SELECT sg.id, string_agg(s.word, ', ') as words 
+            SELECT sg.id,
+                   string_agg(s.word, ', ' ORDER BY s.word) AS words
             FROM synonym_groups sg
             JOIN synonyms s ON s.group_id = sg.id
             GROUP BY sg.id
-            ORDER BY sg.id
+            ORDER BY sg.id;
         """)
-        groups = cursor.fetchall()
-        return render_template('synonyms.html', groups=groups)
+
+    groups = cursor.fetchall()
+    return render_template('synonyms.html', groups=groups, q=q)
 
 @app.route('/download_all')
 @admin_required

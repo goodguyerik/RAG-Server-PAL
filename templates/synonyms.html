@@ -2,8 +2,25 @@
 {% block content %}
 <h2>Synonyme verwalten</h2>
 
+<!-- Search bar -->
+<form method="GET" action="{{ url_for('synonyms_management') }}" class="mb-3">
+  <div class="form-group">
+    <label for="q">Synonyme suchen</label>
+    <input type="text"
+           class="form-control"
+           id="q"
+           name="q"
+           placeholder="z.B. strah für Dunkelstrahler, Raystrahler, Strahler"
+           value="{{ q|default('') }}">
+  </div>
+  <button type="submit" class="btn btn-secondary">Suchen</button>
+  {% if q %}
+    <a class="btn btn-link" href="{{ url_for('synonyms_management') }}">Zurücksetzen</a>
+  {% endif %}
+</form>
+
 <!-- Form to add a new synonym group -->
-<form method="POST" action="{{ url_for('synonyms_management') }}">
+<form method="POST" action="{{ url_for('synonyms_management', q=q) }}">
     <input type="hidden" name="action" value="add">
     <div class="form-group">
         <label for="words">Neue Synonym-Gruppe (Komma-getrennte Wörter):</label>
@@ -13,13 +30,25 @@
 </form>
 
 <hr>
-<h3>Existierende Synonym-Gruppen</h3>
+<h3>
+  Existierende Synonym-Gruppen
+  {% if q %}<small class="text-muted">(Suche: “{{ q }}” — {{ groups|length }} Treffer)</small>{% endif %}
+</h3>
+
 {% for group in groups %}
-  <form method="POST" action="{{ url_for('synonyms_management') }}">
+  <form method="POST" action="{{ url_for('synonyms_management', q=q) }}">
       <div class="form-group">
           <label>Gruppe {{ group[0] }}:</label>
           <input type="hidden" name="group_id" value="{{ group[0] }}">
-          <input type="text" class="form-control" name="words" value="{{ group[1] }}">
+          {# highlight q inside the words string #}
+          <input type="text"
+                 class="form-control"
+                 name="words"
+                 value="{{ group[1] }}"
+                 >
+          <small class="form-text text-muted">
+            {% if q %}Treffer hervorgehoben: {{ group[1]|highlight(q)|safe }}{% endif %}
+          </small>
       </div>
       <button type="submit" name="action" value="update" class="btn btn-success">Aktualisieren</button>
       <button type="submit" name="action" value="delete" class="btn btn-danger">Löschen</button>
