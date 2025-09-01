@@ -391,17 +391,21 @@ def synonyms_management():
     if q:
         cursor.execute("""
             SELECT sg.id,
-                   string_agg(s.word, ', ' ORDER BY s.word) AS words
+                string_agg(s2.word, ', ' ORDER BY s2.word) AS words
             FROM synonym_groups sg
-            JOIN synonyms s ON s.group_id = sg.id
-            WHERE s.word ILIKE %s
+            JOIN synonyms s2 ON s2.group_id = sg.id
+            WHERE sg.id IN (
+                SELECT DISTINCT s.group_id
+                FROM synonyms s
+                WHERE s.word ILIKE %s
+            )
             GROUP BY sg.id
             ORDER BY sg.id;
         """, (f"%{q}%",))
     else:
         cursor.execute("""
             SELECT sg.id,
-                   string_agg(s.word, ', ' ORDER BY s.word) AS words
+                string_agg(s.word, ', ' ORDER BY s.word) AS words
             FROM synonym_groups sg
             JOIN synonyms s ON s.group_id = sg.id
             GROUP BY sg.id
