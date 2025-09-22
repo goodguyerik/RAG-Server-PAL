@@ -159,8 +159,8 @@ def search():
             return render_template('search.html', query=original_query)
 	
         t4 = time.perf_counter()
-        #temp, runtime = retrieve_cross_encoder(conn, res, query, 10, 10, config.INFERENCE_URL)
-        temp, runtime = retrieve_cross_encoder(conn, res, query, 5, 10, 'http://localhost:8001/score')
+        temp, runtime = retrieve_cross_encoder(conn, res, query, 10, 10, config.INFERENCE_URL)
+        #temp, runtime = retrieve_cross_encoder(conn, res, query, 5, 10, 'http://localhost:8001/score')
         t5 = time.perf_counter()
 
         rank = temp[0]
