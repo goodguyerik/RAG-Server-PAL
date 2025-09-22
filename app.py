@@ -91,6 +91,28 @@ def score_to_color(score, min_score, max_score):
     green = int(t * 255)
     return f"#{red:02x}{green:02x}00"
 
+def connections(pdf):
+    cursor = conn.cursor()
+    cursor.execute("SELECT id FROM map WHERE name = %s", (pdf,))
+    pdf_id = cursor.fetchone()
+    cursor.execute("SELECT doc2_id FROM connections WHERE doc1_id = %s", (pdf_id,))
+    conn_id = cursor.fetchone()
+    cursor.execute("SELECT name FROM map WHERE id = %s", (conn_id,))
+    conn_name = cursor.fetchone()
+
+    pdfs = get_db_pdf_names(conn)
+
+    if conn_name == None:
+        conn_name = 'nicht verknüpft'
+    else:
+        pdfs.insert(0, "Verbindung aufheben")
+
+    print(pdf_id, conn_id, conn_name)
+    
+    return (conn_name, pdfs)
+
+app.jinja_env.globals.update(connections=connections)
+
 # ------------------ Routes ------------------
 @app.route('/')
 def index():
@@ -137,8 +159,8 @@ def search():
             return render_template('search.html', query=original_query)
 	
         t4 = time.perf_counter()
-        temp, runtime = retrieve_cross_encoder(conn, res, query, 10, 10, config.INFERENCE_URL)
-        #temp, runtime = retrieve_cross_encoder(conn, res, query, 10, 10, 'http://localhost:8001/score')
+        #temp, runtime = retrieve_cross_encoder(conn, res, query, 10, 10, config.INFERENCE_URL)
+        temp, runtime = retrieve_cross_encoder(conn, res, query, 5, 10, 'http://localhost:8001/score')
         t5 = time.perf_counter()
 
         rank = temp[0]
@@ -319,8 +341,35 @@ def delete_single_pdf(pdf):
 @app.route('/pdf_viewer/<path:filename>')
 @login_required
 def pdf_viewer(filename):
-    page = request.args.get('page', default=1, type=int)
-    return render_template('pdf_viewer.html', filename=filename, page=page)
+    cursor = conn.cursor()
+    
+    sql = """
+        SELECT name
+        FROM map 
+        WHERE id = (
+            SELECT doc2_id 
+            FROM connections
+            WHERE doc1_id = (
+                SELECT id 
+                FROM map
+                WHERE name = %s
+            )
+        )
+        """
+    
+    cursor.execute(sql, (filename,))
+    row = cursor.fetchone()
+    conn_name = row[0] if row else None
+
+    base_name, _ = os.path.splitext(filename)
+    video_filename = base_name + ".mp4"
+    video_path = os.path.join("videos", video_filename)
+    if os.path.exists(video_path):
+        return render_template('video_player.html', filename=video_filename, t=0)
+    else:
+        page = request.args.get('page', default=1, type=int)
+        print(conn_name)
+        return render_template('pdf_viewer.html', filename=filename, page=page, conn_name=conn_name)
 
 @app.route('/video_player/<path:filename>')
 @login_required
@@ -476,6 +525,45 @@ def logout():
     session.pop('admin_logged_in', None)
     flash("Erfolgreich ausgeloggt.")
     return redirect(url_for('login'))
+
+@app.post("/establish_connection")
+def establish_connection():
+    source_pdf = request.form.get("source_pdf")
+    target_pdf = request.form.get("target_pdf")
+
+    if not source_pdf or not target_pdf:
+        flash("Ungültige Auswahl.", "warning")
+        return redirect(url_for("pdf_delete"))
+
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT id FROM map WHERE name = %s", (source_pdf,))
+        source_id = cursor.fetchone()
+
+        #connection löschen
+        if target_pdf == "Verbindung aufheben":
+            cursor.execute("DELETE FROM connections WHERE doc1_id = %s", (source_id,))
+        #connection eintragen
+        else:
+            cursor.execute("SELECT id FROM map WHERE name = %s", (target_pdf,))
+            target_id = cursor.fetchone()
+
+            if source_id == target_id:
+                raise ValueError("Kann nicht sich selbst verknüpfen.")
+            
+            cursor.execute(
+                "INSERT INTO connections (doc1_id, doc2_id) VALUES (%s, %s) ON CONFLICT (doc1_id) DO UPDATE SET doc2_id = EXCLUDED.doc2_id",
+                (source_id, target_id),
+            )
+
+            flash(f"Verbindung hergestellt: {source_pdf} ↔ {target_pdf}", "success")
+
+    except Exception as e:
+        flash(f"Fehler beim Herstellen der Verbindung: {e}", "danger")
+
+    conn.commit()
+
+    return redirect(url_for("pdf_delete"))
 
 #if __name__ == '__main__':
 #    app.run(debug=True, port=9000)

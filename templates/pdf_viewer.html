@@ -1,6 +1,27 @@
 <!-- templates/pdf_viewer.html -->
 {% extends "base.html" %}
 {% block content %}
+
+{% if conn_name %}
+<nav class="navbar navbar-light bg-light border-bottom sticky-top py-2">
+  <div class="container-fluid">
+    <span class="navbar-text text-truncate" style="max-width: 55vw;">
+      Verbundene Datei:
+      <strong title="{{ conn_name }}">{{ conn_name }}</strong>
+    </span>
+    <div class="d-flex gap-2">
+      <a
+        class="btn btn-sm btn-outline-primary"
+        href="{{ url_for('pdf_viewer', filename=conn_name, page=1) }}"
+        title="Verbundene PDF/Video öffnen"
+      >
+        Öffne verbundene PDF/Video
+      </a>
+    </div>
+  </div>
+</nav>
+{% endif %}
+
 <div class="container py-3">
   <h3 class="text-center mb-3">PDF: {{ filename }}</h3>
 </div>
