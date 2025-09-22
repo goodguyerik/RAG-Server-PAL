@@ -73,7 +73,13 @@ query_expansion.update_synonym_list(conn)
 # Initially build the BM25 index.
 bm25, doc_ids = bm25_retrieval.initialize_bm25(conn)
 handle_bm25_dump.modify_bm25_dump(conn, bm25, doc_ids, 'insert')
-keycaps = ['1️⃣','2️⃣','3️⃣','4️⃣','5️⃣','6️⃣','7️⃣','8️⃣','9️⃣','🔟']
+keycaps = [
+    '1️⃣','2️⃣','3️⃣','4️⃣','5️⃣','6️⃣','7️⃣','8️⃣','9️⃣','🔟',
+    '11','12','13','14','15','16','17','18','19','20',
+    '21','22','23','24','25','26','27','28','29','30',
+    '31','32','33','34','35','36','37','38','39','40',
+    '41','42','43','44','45','46','47','48','49','50'
+]
 
 # ------------------ Helper Function ------------------
 def score_to_color(score, min_score, max_score):
@@ -131,8 +137,8 @@ def search():
             return render_template('search.html', query=original_query)
 	
         t4 = time.perf_counter()
-        temp, runtime = retrieve_cross_encoder(conn, res, query, 5, 10, config.INFERENCE_URL)
-        #temp, runtime = retrieve_cross_encoder(conn, res, query, 5, 10, 'http://localhost:8001/score')
+        temp, runtime = retrieve_cross_encoder(conn, res, query, 10, 10, config.INFERENCE_URL)
+        #temp, runtime = retrieve_cross_encoder(conn, res, query, 10, 10, 'http://localhost:8001/score')
         t5 = time.perf_counter()
 
         rank = temp[0]

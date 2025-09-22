@@ -143,5 +143,29 @@
 
     {% endif %}
   {% endif %}
+
+  <style>
+  .hero-logo { max-height: 500px; width: auto; }
+  @media (min-width: 768px) { .hero-logo { max-height: 500px; } }
+  </style>
+  
+  <img
+    src="{{ url_for('static', filename='help/wini_gruss.PNG') }}"
+    alt="{{ company_name }}"
+    class="img-fluid hero-logo d-block mx-auto"
+    loading="lazy" decoding="async"
+  />
+
+  <div class="text-center mt-2">
+    <a
+      href="{{ url_for('static', filename='help/Bedienungsanleitung WINI.pdf') }}"
+      class="btn btn-outline-primary btn-sm"
+      target="_blank" rel="noopener"
+      title="Bedienungsanleitung WINI (PDF)"
+    >
+      Mehr Informationen
+    </a>
+  </div>
+  
 </div>
 {% endblock %}
